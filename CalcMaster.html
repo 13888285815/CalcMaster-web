@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>通用计算器 Pro</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231a1a2e' width='100' height='100' rx='20'/><text x='50' y='68' font-size='50' text-anchor='middle' fill='%23e94560'>∑</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-card: #0f3460;
+      --accent: #e94560;
+      --accent-light: #ff6b6b;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --btn-number: #2d3a5c;
+      --btn-operator: #e94560;
+      --btn-function: #3d4a6c;
+      --shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: var(--text-primary);
+    }
+
+    .calculator {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 12px;
+      background: var(--bg-card);
+      border: none;
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .mode-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .mode-tab:hover:not(.active) {
+      background: var(--btn-function);
+    }
+
+    /* Display */
+    .display {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 25px;
+      margin-bottom: 15px;
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      box-shadow: var(--shadow);
+    }
+
+    .expression {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      word-break: break-all;
+      text-align: right;
+      min-height: 24px;
+    }
+
+    .result {
+      font-size: 48px;
+      font-weight: 300;
+      letter-spacing: -2px;
+      word-break: break-all;
+      text-align: right;
+    }
+
+    /* Keypad */
+    .keypad {
+      display: grid;
+      gap: 10px;
+    }
+
+    .keypad.basic {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .keypad.scientific {
+      grid-template-columns: repeat(5, 1fr);
+      display: none;
+    }
+
+    .keypad.finance {
+      grid-template-columns: repeat(4, 1fr);
+      display: none;
+    }
+
+    .keypad.active {
+      display: grid;
+    }
+
+    .key {
+      border: none;
+      border-radius: 16px;
+      font-size: 26px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 65px;
+      background: var(--btn-number);
+      color: white;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .key:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .key:active {
+      transform: scale(0.95);
+    }
+
+    .key.operator {
+      background: var(--btn-operator);
+    }
+
+    .key.function {
+      background: var(--btn-function);
+      font-size: 16px;
+    }
+
+    .key.clear {
+      background: #4a4a6a;
+    }
+
+    .key.equals {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+      grid-column: span 2;
+    }
+
+    .key.zero {
+      grid-column: span 2;
+    }
+
+    /* Finance Input */
+    .finance-panel {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .finance-panel.active {
+      display: block;
+    }
+
+    .finance-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .finance-input-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .finance-input-group label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .finance-input-group input {
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      color: white;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    /* History */
+    .history-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-card);
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      color: var(--text-secondary);
+      font-size: 22px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .history-toggle:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .history-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 350px;
+      max-width: 90vw;
+      height: 100vh;
+      background: var(--bg-secondary);
+      z-index: 1000;
+      transition: right 0.3s ease;
+      padding: 80px 20px 20px;
+      box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+    }
+
+    .history-panel.open {
+      right: 0;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .history-header h3 {
+      font-size: 20px;
+    }
+
+    .history-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 28px;
+      cursor: pointer;
+    }
+
+    .history-list {
+      list-style: none;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+
+    .history-item {
+      padding: 15px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .history-item:hover {
+      background: var(--btn-function);
+      transform: translateX(-5px);
+    }
+
+    .history-expression {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+      word-break: break-all;
+    }
+
+    .history-result {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .history-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 5px;
+    }
+
+    .history-clear {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    .history-empty {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 40px;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--accent);
+      padding: 14px 28px;
+      border-radius: 25px;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 2000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Responsive - iPad */
+    @media (min-width: 768px) {
+      .calculator {
+        max-width: 500px;
+      }
+
+      .key {
+        min-height: 75px;
+        font-size: 30px;
+      }
+
+      .result {
+        font-size: 56px;
+      }
+
+      .display {
+        padding: 30px;
+        min-height: 160px;
+      }
+    }
+
+    /* Responsive - Large Tablet */
+    @media (min-width: 1024px) {
+      .calculator {
+        max-width: 550px;
+      }
+
+      .key {
+        min-height: 80px;
+        font-size: 32px;
+      }
+
+      .result {
+        font-size: 60px;
+      }
+    }
+
+    /* Animation */
+    @keyframes press {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.92); }
+      100% { transform: scale(1); }
+    }
+
+    .key.pressed {
+      animation: press 0.15s ease;
+    }
+
+    /* Features */
+    .features {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .feature-badge {
+      background: var(--bg-card);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .feature-badge span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <button class="history-toggle" onclick="toggleHistory()">📋</button>
+
+  <div class="overlay" id="overlay" onclick="toggleHistory()"></div>
+
+  <div class="history-panel" id="history-panel">
+    <div class="history-header">
+      <h3>历史记录</h3>
+      <button class="history-close" onclick="toggleHistory()">✕</button>
+    </div>
+    <ul class="history-list" id="history-list"></ul>
+    <button class="history-clear" onclick="clearHistory()">清空历史</button>
+  </div>
+
+  <div class="calculator">
+    <div class="header">
+      <h1>通用计算器 Pro</h1>
+      <p>iPad / iPhone 通用</p>
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('basic')">📱 普通</button>
+      <button class="mode-tab" onclick="switchMode('scientific')">🔬 科学</button>
+      <button class="mode-tab" onclick="switchMode('finance')">💰 金融</button>
+    </div>
+
+    <!-- Display -->
+    <div class="display">
+      <div class="expression" id="expression"></div>
+      <div class="result" id="result">0</div>
+    </div>
+
+    <!-- Finance Input Panel -->
+    <div class="finance-panel" id="finance-panel">
+      <div class="finance-row">
+        <div class="finance-input-group">
+          <label>本金 (¥)</label>
+          <input type="number" id="principal" placeholder="10000" value="10000">
+        </div>
+        <div class="finance-input-group">
+          <label>年利率 (%)</label>
+          <input type="number" id="rate" placeholder="5" value="5">
+        </div>
+      </div>
+      <div class="finance-row">
+        <div class="finance-input-group">
+          <label>期限 (年)</label>
+          <input type="number" id="years" placeholder="1" value="1">
+        </div>
+        <div class="finance-input-group">
+          <label>月供</label>
+          <input type="number" id="monthlyPayment" placeholder="月供">
+        </div>
+      </div>
+    </div>
+
+    <!-- Basic Keypad -->
+    <div class="keypad basic active" id="keypad-basic">
+      <button class="key function" onclick="clearAll()">AC</button>
+      <button class="key function" onclick="toggleSign()">±</button>
+      <button class="key function" onclick="percentage()">%</button>
+      <button class="key operator" onclick="operator('/')">÷</button>
+      
+      <button class="key" onclick="input('7')">7</button>
+      <button class="key" onclick="input('8')">8</button>
+      <button class="key" onclick="input('9')">9</button>
+      <button class="key operator" onclick="operator('*')">×</button>
+      
+      <button class="key" onclick="input('4')">4</button>
+      <button class="key" onclick="input('5')">5</button>
+      <button class="key" onclick="input('6')">6</button>
+      <button class="key operator" onclick="operator('-')">−</button>
+      
+      <button class="key" onclick="input('1')">1</button>
+      <button class="key" onclick="input('2')">2</button>
+      <button class="key" onclick="input('3')">3</button>
+      <button class="key operator" onclick="operator('+')">+</button>
+      
+      <button class="key zero" onclick="input('0')">0</button>
+      <button class="key" onclick="input('.')">.</button>
+      <button class="key operator" onclick="calculate()">=</button>
+    </div>
+
+    <!-- Scientific Keypad -->
+    <div class="keypad scientific" id="keypad-scientific">
+      <button class="key function" onclick="sciFunc('sin')">sin</button>
+      <button class="key function" onclick="sciFunc('cos')">cos</button>
+      <button class="key function" onclick="sciFunc('tan')">tan</button>
+      <button class="key function" onclick="sciFunc('log')">log</button>
+      <button class="key function" onclick="sciFunc('ln')">ln</button>
+      
+      <button class="key function" onclick="sciFunc('asin')">sin⁻¹</button>
+      <button class="key function" onclick="sciFunc('acos')">cos⁻¹</button>
+      <button class="key function" onclick="sciFunc('atan')">tan⁻¹</button>
+      <button class="key function" onclick="sciFunc('sqrt')">√</button>
+      <button class="key function" onclick="power()">xʸ</button>
+      
+      <button class="key function" onclick="input('(')">(</button>
+      <button class="key function" onclick="input(')')">)</button>
+      <button class="key function" onclick="sciFunc('square')">x²</button>
+      <button class="key function" onclick="sciFunc('factorial')">n!</button>
+      <button class="key function" onclick="sciFunc('pi')">π</button>
+      
+      <button class="key" onclick="input('7')">7</button>
+      <button class="key" onclick="input('8')">8</button>
+      <button class="key" onclick="input('9')">9</button>
+      <button class="key function" onclick="sciFunc('e')">e</button>
+      <button class="key operator" onclick="operator('/')">÷</button>
+      
+      <button class="key" onclick="input('4')">4</button>
+      <button class="key" onclick="input('5')">5</button>
+      <button class="key" onclick="input('6')">6</button>
+      <button class="key clear" onclick="backspace()">⌫</button>
+      <button class="key operator" onclick="operator('*')">×</button>
+      
+      <button class="key" onclick="input('1')">1</button>
+      <button class="key" onclick="input('2')">2</button>
+      <button class="key" onclick="input('3')">3</button>
+      <button class="key clear" onclick="clearAll()">AC</button>
+      <button class="key operator" onclick="operator('-')">−</button>
+      
+      <button class="key" onclick="input('0')">0</button>
+      <button class="key" onclick="input('.')">.</button>
+      <button class="key operator" onclick="calculate()" style="grid-column: span 2;">=</button>
+      <button class="key operator" onclick="operator('+')">+</button>
+    </div>
+
+    <!-- Finance Keypad -->
+    <div class="keypad finance" id="keypad-finance">
+      <button class="key function" onclick="finCalc('simple')">单利</button>
+      <button class="key function" onclick="finCalc('compound')">复利</button>
+      <button class="key function" onclick="finCalc('monthly')">月供</button>
+      <button class="key function" onclick="finCalc('total')">总还款</button>
+      
+      <button class="key" onclick="input('7')">7</button>
+      <button class="key" onclick="input('8')">8</button>
+      <button class="key" onclick="input('9')">9</button>
+      <button class="key operator" onclick="operator('/')">÷</button>
+      
+      <button class="key" onclick="input('4')">4</button>
+      <button class="key" onclick="input('5')">5</button>
+      <button class="key" onclick="input('6')">6</button>
+      <button class="key operator" onclick="operator('*')">×</button>
+      
+      <button class="key" onclick="input('1')">1</button>
+      <button class="key" onclick="input('2')">2</button>
+      <button class="key" onclick="input('3')">3</button>
+      <button class="key operator" onclick="operator('-')">−</button>
+      
+      <button class="key zero" onclick="input('0')">0</button>
+      <button class="key" onclick="input('.')">.</button>
+      <button class="key operator" onclick="operator('+')">+</button>
+    </div>
+
+    <div class="features">
+      <span class="feature-badge">🎯 <span>支持</span> iPad</span>
+      <span class="feature-badge">📱 <span>支持</span> iPhone</span>
+      <span class="feature-badge">📋 <span>历史记录</span></span>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">已复制到剪贴板</div>
+
+  <script>
+    // State
+    let currentExpression = '';
+    let currentResult = '0';
+    let lastResult = null;
+    let waitingForOperand = false;
+    let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
+    let currentMode = 'basic';
+
+    // Display elements
+    const expressionEl = document.getElementById('expression');
+    const resultEl = document.getElementById('result');
+    const historyList = document.getElementById('history-list');
+    const toast = document.getElementById('toast');
+
+    // Initialize
+    renderHistory();
+
+    // Input functions
+    function input(value) {
+      if (waitingForOperand) {
+        currentExpression = '';
+        waitingForOperand = false;
+      }
+      currentExpression += value;
+      updateDisplay();
+    }
+
+    function operator(op) {
+      if (currentExpression === '' && lastResult !== null) {
+        currentExpression = lastResult;
+      }
+      if (currentExpression !== '') {
+        currentExpression += ' ' + op + ' ';
+        waitingForOperand = false;
+        updateDisplay();
+      }
+    }
+
+    function calculate() {
+      try {
+        let expr = currentExpression
+          .replace(/×/g, '*')
+          .replace(/÷/g, '/')
+          .replace(/−/g, '-')
+          .replace(/π/g, Math.PI)
+          .replace(/e(?![x])/g, Math.E);
+
+        const result = eval(expr);
+        
+        if (isNaN(result) || !isFinite(result)) {
+          currentResult = 'Error';
+        } else {
+          currentResult = formatNumber(result);
+          lastResult = result;
+          
+          // Save to history
+          const historyItem = {
+            expression: currentExpression,
+            result: currentResult,
+            timestamp: Date.now()
+          };
+          history.unshift(historyItem);
+          if (history.length > 100) history.pop();
+          localStorage.setItem('calcHistory', JSON.stringify(history));
+          renderHistory();
+        }
+        
+        expressionEl.textContent = currentExpression + ' =';
+        resultEl.textContent = currentResult;
+        currentExpression = currentResult;
+        waitingForOperand = true;
+      } catch (e) {
+        currentResult = 'Error';
+        resultEl.textContent = currentResult;
+      }
+    }
+
+    function clearAll() {
+      currentExpression = '';
+      currentResult = '0';
+      lastResult = null;
+      waitingForOperand = false;
+      updateDisplay();
+    }
+
+    function backspace() {
+      if (waitingForOperand) {
+        currentExpression = currentResult;
+        waitingForOperand = false;
+      }
+      currentExpression = currentExpression.trim().slice(0, -1);
+      updateDisplay();
+    }
+
+    function toggleSign() {
+      if (currentExpression !== '' && !waitingForOperand) {
+        const match = currentExpression.match(/(-?\d+\.?\d*)$/);
+        if (match) {
+          const num = match[1];
+          const index = currentExpression.lastIndexOf(num);
+          if (currentExpression[index - 1] === '-') {
+            currentExpression = currentExpression.slice(0, index - 1) + currentExpression.slice(index);
+          } else {
+            currentExpression = currentExpression.slice(0, index) + '-' + num;
+          }
+          updateDisplay();
+        }
+      }
+    }
+
+    function percentage() {
+      if (currentExpression !== '') {
+        try {
+          const result = eval(currentExpression) / 100;
+          currentExpression = formatNumber(result);
+          resultEl.textContent = currentExpression;
+          waitingForOperand = true;
+        } catch (e) {
+          resultEl.textContent = 'Error';
+        }
+      }
+    }
+
+    // Scientific functions
+    function sciFunc(func) {
+      if (currentExpression === '' && lastResult !== null) {
+        currentExpression = lastResult;
+      }
+      
+      let result;
+      const num = currentExpression ? eval(currentExpression) : 0;
+      
+      switch(func) {
+        case 'sin': result = Math.sin(toRadians(num)); break;
+        case 'cos': result = Math.cos(toRadians(num)); break;
+        case 'tan': result = Math.tan(toRadians(num)); break;
+        case 'asin': result = toDegrees(Math.asin(num)); break;
+        case 'acos': result = toDegrees(Math.acos(num)); break;
+        case 'atan': result = toDegrees(Math.atan(num)); break;
+        case 'log': result = Math.log10(num); break;
+        case 'ln': result = Math.log(num); break;
+        case 'sqrt': result = Math.sqrt(num); break;
+        case 'square': result = num * num; break;
+        case 'factorial': result = factorial(Math.floor(num)); break;
+        case 'pi': result = Math.PI; break;
+        case 'e': result = Math.E; break;
+      }
+      
+      if (isNaN(result) || !isFinite(result)) {
+        currentResult = 'Error';
+      } else {
+        currentResult = formatNumber(result);
+        lastResult = result;
+      }
+      
+      currentExpression = currentResult;
+      resultEl.textContent = currentResult;
+      waitingForOperand = true;
+    }
+
+    function power() {
+      operator('**');
+    }
+
+    function toRadians(deg) {
+      return deg * (Math.PI / 180);
+    }
+
+    function toDegrees(rad) {
+      return rad * (180 / Math.PI);
+    }
+
+    function factorial(n) {
+      if (n < 0) return NaN;
+      if (n === 0 || n === 1) return 1;
+      let result = 1;
+      for (let i = 2; i <= n; i++) result *= i;
+      return result;
+    }
+
+    // Finance calculations
+    function finCalc(type) {
+      const principal = parseFloat(document.getElementById('principal').value) || 0;
+      const rate = parseFloat(document.getElementById('rate').value) / 100 || 0;
+      const years = parseFloat(document.getElementById('years').value) || 1;
+      
+      let result;
+      let description;
+      
+      switch(type) {
+        case 'simple':
+          // Simple Interest: A = P(1 + rt)
+          result = principal * (1 + rate * years);
+          description = `单利计算`;
+          break;
+        case 'compound':
+          // Compound Interest: A = P(1 + r)^t
+          result = principal * Math.pow(1 + rate, years);
+          description = `复利计算`;
+          break;
+        case 'monthly':
+          // Monthly payment for loan: M = P * [r(1+r)^n] / [(1+r)^n - 1]
+          const monthlyRate = rate / 12;
+          const numPayments = years * 12;
+          if (monthlyRate === 0) {
+            result = principal / numPayments;
+          } else {
+            result = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                     (Math.pow(1 + monthlyRate, numPayments) - 1);
+          }
+          description = `月供计算`;
+          break;
+        case 'total':
+          // Total repayment
+          const monthlyRate2 = rate / 12;
+          const numPayments2 = years * 12;
+          if (monthlyRate2 === 0) {
+            result = principal;
+          } else {
+            const monthlyPayment = principal * (monthlyRate2 * Math.pow(1 + monthlyRate2, numPayments2)) / 
+                     (Math.pow(1 + monthlyRate2, numPayments2) - 1);
+            result = monthlyPayment * numPayments2;
+          }
+          description = `总还款`;
+          break;
+      }
+      
+      currentResult = formatNumber(result);
+      lastResult = result;
+      resultEl.textContent = currentResult;
+      expressionEl.textContent = description;
+      currentExpression = currentResult;
+      waitingForOperand = true;
+      
+      // Save to history
+      const historyItem = {
+        expression: `${description}: 本金 ${formatNumber(principal)}`,
+        result: currentResult,
+        timestamp: Date.now()
+      };
+      history.unshift(historyItem);
+      if (history.length > 100) history.pop();
+      localStorage.setItem('calcHistory', JSON.stringify(history));
+      renderHistory();
+    }
+
+    // Display update
+    function updateDisplay() {
+      expressionEl.textContent = currentExpression;
+      resultEl.textContent = currentExpression || '0';
+    }
+
+    // Format number
+    function formatNumber(num) {
+      if (Number.isInteger(num)) {
+        return num.toLocaleString('zh-CN');
+      }
+      // Handle floating point precision
+      const rounded = Math.round(num * 10000000) / 10000000;
+      if (Number.isInteger(rounded)) {
+        return rounded.toLocaleString('zh-CN');
+      }
+      return rounded.toLocaleString('zh-CN', {
+        maximumFractionDigits: 8,
+        minimumFractionDigits: 0
+      });
+    }
+
+    // Mode switching
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // Update tabs
+      document.querySelectorAll('.mode-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Update keypads
+      document.getElementById('keypad-basic').classList.remove('active');
+      document.getElementById('keypad-scientific').classList.remove('active');
+      document.getElementById('keypad-finance').classList.remove('active');
+      document.getElementById('finance-panel').classList.remove('active');
+      
+      if (mode === 'basic') {
+        document.getElementById('keypad-basic').classList.add('active');
+      } else if (mode === 'scientific') {
+        document.getElementById('keypad-scientific').classList.add('active');
+      } else if (mode === 'finance') {
+        document.getElementById('keypad-finance').classList.add('active');
+        document.getElementById('finance-panel').classList.add('active');
+      }
+    }
+
+    // History functions
+    function toggleHistory() {
+      const panel = document.getElementById('history-panel');
+      const overlay = document.getElementById('overlay');
+      panel.classList.toggle('open');
+      overlay.classList.toggle('open');
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historyList.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+        return;
+      }
+      
+      historyList.innerHTML = history.map((item, index) => `
+        <li class="history-item" onclick="useHistory(${index})">
+          <div class="history-expression">${item.expression}</div>
+          <div class="history-result">= ${item.result}</div>
+          <div class="history-time">${formatTime(item.timestamp)}</div>
+        </li>
+      `).join('');
+    }
+
+    function useHistory(index) {
+      const item = history[index];
+      currentExpression = item.result;
+      lastResult = parseFloat(item.result.replace(/,/g, ''));
+      resultEl.textContent = item.result;
+      expressionEl.textContent = item.expression + ' →';
+      waitingForOperand = true;
+      toggleHistory();
+    }
+
+    function clearHistory() {
+      history = [];
+      localStorage.setItem('calcHistory', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = now - date;
+      
+      if (diff < 60000) return '刚刚';
+      if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+      if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+      return date.toLocaleDateString('zh-CN');
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '0' && e.key <= '9') input(e.key);
+      else if (e.key === '.') input('.');
+      else if (e.key === '+') operator('+');
+      else if (e.key === '-') operator('-');
+      else if (e.key === '*') operator('*');
+      else if (e.key === '/') operator('/');
+      else if (e.key === 'Enter' || e.key === '=') calculate();
+      else if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') clearAll();
+      else if (e.key === 'Backspace') backspace();
+      else if (e.key === '%') percentage();
+      else if (e.key === '(') input('(');
+      else if (e.key === ')') input(')');
+    });
+
+    // Add haptic feedback effect
+    document.querySelectorAll('.key').forEach(key => {
+      key.addEventListener('click', () => {
+        key.classList.add('pressed');
+        setTimeout(() => key.classList.remove('pressed'), 150);
+      });
+    });
+  </script>
+</body>
+</html>
